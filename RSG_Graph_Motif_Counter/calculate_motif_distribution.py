@@ -7,6 +7,8 @@ from .load_graph_motifs import load_motif_list
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
+SHOW_PROGRESS = False
+
 
 def calc_motif_distribution(G, graph_motif_list):
     """
@@ -17,22 +19,41 @@ def calc_motif_distribution(G, graph_motif_list):
 
     hist_ = np.zeros(len(graph_motif_list), dtype=int)
     # print(f"[info] calc_motif_distribution: {len(graph_motif_list)} graphs to go ")
-    for index, motif in enumerate(tqdm(graph_motif_list)):
-        if motif.number_of_nodes() == 1:
-            hist_[index] = G.number_of_nodes()
-            continue
-        if motif.number_of_nodes() == 2:
-            hist_[index] = G.number_of_edges()
-            continue
+    if SHOW_PROGRESS is True:
+        for index, motif in enumerate(tqdm(graph_motif_list)):
+            if motif.number_of_nodes() == 1:
+                hist_[index] = G.number_of_nodes()
+                continue
+            if motif.number_of_nodes() == 2:
+                hist_[index] = G.number_of_edges()
+                continue
 
-        if index % 10 == 0:
-            pass
+            if index % 10 == 0:
+                pass
 
-        t0 = time.perf_counter()
-        GM = nx.algorithms.isomorphism.GraphMatcher(G, motif)
-        for subgraph in GM.subgraph_isomorphisms_iter():
-            hist_[index] += 1
-        t1 = time.perf_counter()
+            t0 = time.perf_counter()
+            GM = nx.algorithms.isomorphism.GraphMatcher(G, motif)
+            for subgraph in GM.subgraph_isomorphisms_iter():
+                hist_[index] += 1
+            t1 = time.perf_counter()
+    else:
+        for index, motif in enumerate(graph_motif_list):
+            if motif.number_of_nodes() == 1:
+                hist_[index] = G.number_of_nodes()
+                continue
+            if motif.number_of_nodes() == 2:
+                hist_[index] = G.number_of_edges()
+                continue
+
+            if index % 10 == 0:
+                pass
+
+            t0 = time.perf_counter()
+            GM = nx.algorithms.isomorphism.GraphMatcher(G, motif)
+            for subgraph in GM.subgraph_isomorphisms_iter():
+                hist_[index] += 1
+            t1 = time.perf_counter()
+
         # print(f"    progress: {index}/{len(graph_motif_list)} using time {t1 - t0}")
     return hist_
 
