@@ -9,4 +9,4 @@ The focus is to generate a random graph with undirected links with the nodes tha
 | `get_reduced_adjacency(adj_matrix, num_nodes)` | Remove `num_nodes` nodes with the highest degrees from the existing graph | Adjacency matrix `adj_matrix` of the new graph                              |
 
 
-Graph motif generation is from (here)[https://github.com/TianYafu/RSG_Graph_Motif_Counter].
+Graph motif generation is from [here](https://github.com/TianYafu/RSG_Graph_Motif_Counter).
