@@ -9,6 +9,7 @@ from RSG_Graph_Motif_Counter.load_graph_motifs import load_motif_list
 from tqdm import tqdm
 from scipy.stats import wasserstein_distance as w_d
 import os.path
+from tabulate import tabulate
 
 MOTIF_COUNTS = [1, 2, 4, 10, 31, 143]
 SEED = 5
@@ -85,72 +86,30 @@ if __name__ == "__main__":
 
     # TEST
     val =[]
+    best_configs = []
     for attk in range(1,num_max_attacks):
         attack_probabilities_init = np.zeros(num_max_attacks)
         s_vals = get_s_distribution(attk)  # (5 * num_max_attacks // 8)
         attack_probabilities_init[:s_vals.shape[0]] = s_vals
         exp_val_init = attack_probabilities_init @ dist_val
         best_config = np.argmin(exp_val_init)
-        print('Attacks: ', attk, '; Configuration: ', best_config)
-        val.append(dist_val[attk, best_config])
-    plt.plot(range(1,num_max_attacks), val)
-    plt.show()
+        if not best_config in best_configs:
+            best_configs.append(best_config)
+        # print('Attacks: ', attk, '; Configuration: ', best_config)
 
-    attack_probabilities_init = np.zeros(num_max_attacks)
-    s_vals = get_s_distribution(10)  # (5 * num_max_attacks // 8)
-    attack_probabilities_init[:s_vals.shape[0]] = s_vals
-    exp_val_init = attack_probabilities_init @ dist_val
-    #
-    attack_probabilities_now = np.zeros(num_max_attacks)
-    s_vals = get_s_distribution(14)  # (num_max_attacks // 4) 11
-    attack_probabilities_now[:s_vals.shape[0]] = s_vals
-    exp_val_now = attack_probabilities_now @ dist_val
+    print('Number of best configurations: ', len(best_configs))
 
-    # temporal settings
-    original_duration = 10000 * 2
-    transition_duration = 5000 * 2
-    new_duration = 2*original_duration - transition_duration
+    best_configs_sorted = np.sort(best_configs)
+    for attk in range(1,num_max_attacks):
+        attack_probabilities_init = np.zeros(num_max_attacks)
+        s_vals = get_s_distribution(attk)  # (5 * num_max_attacks // 8)
+        attack_probabilities_init[:s_vals.shape[0]] = s_vals
+        exp_val_init = attack_probabilities_init @ dist_val
+        this_line = exp_val_init[best_configs_sorted].tolist()
+        this_line.insert(0, attk)
+        val.append(this_line)
+        print(this_line)
 
-    #
-    scale_val = 1000
-    robust_config = np.argmin(exp_val_init)
-    resilient_config = np.argmin(exp_val_init)
+    print(tabulate(val))
 
-    attack_list = []
-    loss_robust = []
-    loss_resilient = []
 
-    for t in range(original_duration+transition_duration+new_duration):
-        if t < original_duration:
-            cur_attack = np.random.choice(num_max_attacks, 1, p=attack_probabilities_init)
-        else:
-            cur_attack = np.random.choice(num_max_attacks, 1, p=attack_probabilities_now)
-            if t == original_duration+transition_duration:
-                resilient_config = np.argmin(exp_val_now)
-
-        loss_robust.append(scale_val * dist_val[cur_attack, robust_config][0])
-        loss_resilient.append(scale_val * dist_val[cur_attack, resilient_config][0])
-        attack_list.append(cur_attack[0])
-
-    # plotting
-    w_size = 25  # 100
-    avg_loss_robust = get_block_average(loss_robust, window_size=w_size)
-    avg_loss_resilient = get_block_average(loss_resilient, window_size=w_size)
-
-    w_size = 50  # 2500 * 2
-    #avg_loss_robust = get_moving_average(loss_robust, window_size=w_size)
-    #avg_loss_resilient = get_moving_average(loss_resilient, window_size=w_size)
-    avg_loss_robust = get_moving_average(avg_loss_robust, window_size=w_size)
-    avg_loss_resilient = get_moving_average(avg_loss_resilient, window_size=w_size)
-
-    T = 2500
-    plt.plot(-1*np.array(avg_loss_robust[0:T]), label='Robust')
-    plt.plot(-1*np.array(avg_loss_resilient[0:T]), label='Resilient')
-    #
-    plt.xlabel("Time")
-    plt.ylabel("Negative of average Loss")
-    leg = plt.legend(loc='upper center')
-    # plt.xlim((0, ind[-1]))
-    # plt.grid(linestyle=':')
-    #
-    plt.show()

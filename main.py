@@ -9,7 +9,7 @@ from scipy.stats import wasserstein_distance as w_d
 import os.path
 
 MOTIF_COUNTS = [1, 2, 4, 10, 31, 143]
-SEED = 0
+SEED = 3
 
 
 def draw_graph(num_nodes, adj_matrix, con_matrix):
@@ -329,9 +329,9 @@ def s_curve(x):
 if __name__ == "__main__":
     np.random.seed(SEED)  # fix seed
     # Graph creation
-    num_initial_nodes = 50  # 50
+    num_initial_nodes = 25  # 50
     num_new_connections = 10  # 10
-    num_max_attacks = 20  # 20
+    num_max_attacks = 10  # 20
     #
     # Drawing only
     adj_mat_init, G_init, con_mat = generate_graph(
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     #
     file_data = f'Data{SEED:02d}_{num_initial_nodes:03d}_{num_new_connections:02d}_{num_max_attacks:02d}.npy'
 
-    if os.path.isfile(file_data) is False:
+    if not os.path.isfile(file_data):
         adj_mat_init, G_init, con_mat = generate_graph(
             num_nodes=num_initial_nodes,
             num_connects=num_new_connections,
@@ -384,14 +384,18 @@ if __name__ == "__main__":
 
         # Calculate Wasserstein distances & visualizing
         dist_val = []
+        motif_dist = []
         for atk in range(num_max_attacks):
             # dist = []
             # for d in distribution_list[atk]:
             #     dist.append(w_d(d, motif_distribution))
             dist_det = []
+            motif_dists_det = []
             for d in distribution_list_detailed[atk]:
                 dist_det.append(w_d(d, motif_distribution_detailed))
+                motif_dists_det.append(d)
             dist_val.append(dist_det)
+            motif_dist.append(motif_dists_det)
             plt.plot(dist_det, label=str(atk + 1))
             # plt.plot(dist_det)
 
@@ -420,6 +424,8 @@ if __name__ == "__main__":
 
         # save data
         np.save(file_data, dist_val)
+        np.save('motifs_'+file_data, motif_dist)
+        np.save('org_' + file_data, motif_distribution_detailed)
     else:
         dist_val = np.load(file_data)
 
@@ -569,6 +575,7 @@ if __name__ == "__main__":
         #
         loss_robust.append(exp_val_now[robust_config])
         loss_resilient.append(np.min(exp_val_now))
+        print('Attacks: ', str(k), '; Configuration: ', str(np.argmin(exp_val_now)))
         probs.append(attack_probabilities_now)
 
     # Plotting
@@ -589,7 +596,7 @@ if __name__ == "__main__":
     plt.grid(linestyle=':')
     #
     plt.show()
-
+    """
     for p in probs:
         plt.bar(np.arange(p.shape[0]) + 1, p)
         plt.xlabel('Num. attacks')
@@ -626,7 +633,7 @@ if __name__ == "__main__":
                cmap='viridis', interpolation='nearest')
     plt.show()
 
-    """"""
+    """
     """
     dist_det = [w_d(motif_distribution_detailed, motif_distribution_detailed)]
     dist = [w_d(motif_distribution, motif_distribution)]
